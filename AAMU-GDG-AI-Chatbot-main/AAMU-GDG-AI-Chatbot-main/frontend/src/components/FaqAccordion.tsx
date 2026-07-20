@@ -14,54 +14,51 @@ interface FaqAccordionProps {
 const FaqAccordion: React.FC<FaqAccordionProps> = ({ faqs }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
-  const toggleFaq = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
-
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-4">
+    <div className="w-full border-t ink-border">
       {faqs.map((faq, index) => (
-        <motion.div 
-          key={index}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.1 }}
-          className="group relative"
+        <motion.div
+          key={faq.question}
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: index * 0.07 }}
+          className="group border-b ink-border"
         >
-          <div className="absolute -inset-1 bg-gradient-to-r from-primary-100 to-secondary-100 dark:from-primary-900 dark:to-secondary-900 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition duration-300"></div>
-          <div className="relative border border-gray-200/50 dark:border-gray-700/50 rounded-xl overflow-hidden bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg transition-all duration-300 group-hover:shadow-xl">
-            <button
-              className="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset group"
-              onClick={() => toggleFaq(index)}
-              aria-expanded={openIndex === index}
+          <button
+            className="flex w-full items-center gap-4 py-6 text-left sm:gap-7 sm:py-8"
+            onClick={() => setOpenIndex(openIndex === index ? null : index)}
+            aria-expanded={openIndex === index}
+            aria-controls={`faq-panel-${index}`}
+          >
+            <span className="font-utility text-xs font-bold tabular-nums tracking-[0.16em] text-secondary-300 dark:text-primary-700">0{index + 1}</span>
+            <span className="flex-1 text-lg font-semibold transition-colors group-hover:text-secondary-300 dark:group-hover:text-primary-700 sm:text-xl">
+              {faq.question}
+            </span>
+            <motion.span
+              animate={{ rotate: openIndex === index ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid h-9 w-9 place-items-center rounded-full border ink-border text-slate-400 transition group-hover:border-secondary-300 group-hover:text-secondary-300 dark:group-hover:border-primary-700 dark:group-hover:text-primary-700"
             >
-              <span className="font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                {faq.question}
-              </span>
+              <ChevronDown size={18} />
+            </motion.span>
+          </button>
+
+          <AnimatePresence>
+            {openIndex === index && (
               <motion.div
-                animate={{ rotate: openIndex === index ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-                className="text-gray-500 dark:text-gray-400 group-hover:text-primary-600 dark:group-hover:text-primary-400"
+                id={`faq-panel-${index}`}
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
               >
-                <ChevronDown size={20} />
+                <div className="pb-7 pl-11 pr-12 sm:pb-8 sm:pl-[4.25rem] sm:pr-20">
+                  <p className="max-w-3xl leading-7 text-slate-300 dark:text-slate-600">{faq.answer}</p>
+                </div>
               </motion.div>
-            </button>
-            
-            <AnimatePresence>
-              {openIndex === index && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="px-6 py-4 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
-                    <p className="text-gray-700 dark:text-gray-300">{faq.answer}</p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+            )}
+          </AnimatePresence>
         </motion.div>
       ))}
     </div>

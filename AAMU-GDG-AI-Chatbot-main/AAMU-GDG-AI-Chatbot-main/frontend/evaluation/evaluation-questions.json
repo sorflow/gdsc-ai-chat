@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "questions": [
+    { "id": "attendance-24", "kind": "grounded", "query": "What is the class attendance policy in the 2024-2025 bulletin?", "expectedYear": "2024-2025", "expectedTerms": ["unexcused absence", "attendance"] },
+    { "id": "probation-24", "kind": "grounded", "query": "What is the academic probation policy in 2024-2025?", "expectedYear": "2024-2025", "expectedTerms": ["academic probation", "academic progress"] },
+    { "id": "load-24", "kind": "grounded", "query": "What is the maximum course load in 2024-2025?", "expectedYear": "2024-2025", "expectedTerms": ["19 credit hours", "maximum course load"] },
+    { "id": "withdraw-24", "kind": "grounded", "query": "How can a student withdraw from a course in the 2024-2025 bulletin?", "expectedYear": "2024-2025", "expectedTerms": ["withdraw", "drop"] },
+    { "id": "full-time-24", "kind": "grounded", "query": "How many credit hours define full-time enrollment in 2024-2025?", "expectedYear": "2024-2025", "expectedTerms": ["12 credit hours", "full time"] },
+    { "id": "grading-23", "kind": "grounded", "query": "What is the grading system in 2023-2024?", "expectedYear": "2023-2024", "expectedTerms": ["4.00 point scale", "letter system"] },
+    { "id": "transfer-23", "kind": "grounded", "query": "What does the 2023-2024 bulletin say about transfer credit?", "expectedYear": "2023-2024", "expectedTerms": ["transfer credit", "transfer"] },
+    { "id": "graduation-23", "kind": "grounded", "query": "What are the graduation requirements in 2023-2024?", "expectedYear": "2023-2024", "expectedTerms": ["graduation requirements", "degree"] },
+    { "id": "attendance-23", "kind": "grounded", "query": "What is the attendance policy in 2023-2024?", "expectedYear": "2023-2024", "expectedTerms": ["unexcused absence", "attendance"] },
+    { "id": "general-education-23", "kind": "grounded", "query": "What are the general education requirements in 2023-2024?", "expectedYear": "2023-2024", "expectedTerms": ["general education", "requirements"] },
+    { "id": "residency-22", "kind": "grounded", "query": "What is the academic residency requirement in 2022-2023?", "expectedYear": "2022-2023", "expectedTerms": ["residence", "resident", "credit hours"] },
+    { "id": "computer-science-22", "kind": "grounded", "query": "What is the computer science curriculum in 2022-2023?", "expectedYear": "2022-2023", "expectedTerms": ["computer science", "curriculum"] },
+    { "id": "grading-22", "kind": "grounded", "query": "How are grades assigned in the 2022-2023 bulletin?", "expectedYear": "2022-2023", "expectedTerms": ["grading system", "grade point"] },
+    { "id": "withdraw-22", "kind": "grounded", "query": "What is the withdrawal policy in 2022-2023?", "expectedYear": "2022-2023", "expectedTerms": ["withdrawal", "withdraw"] },
+    { "id": "admission-22", "kind": "grounded", "query": "What are the undergraduate admission requirements in 2022-2023?", "expectedYear": "2022-2023", "expectedTerms": ["admission requirements", "admissions"] },
+    { "id": "unsupported-quantum", "kind": "unsupported", "query": "What is the quantum submarine maintenance schedule?" },
+    { "id": "unsupported-mars", "kind": "unsupported", "query": "What is the xylophonic zeppelin carburetor protocol?" },
+    { "id": "unsupported-basket", "kind": "unsupported", "query": "Who receives the basket weaving doctoral fellowship?" }
+  ]
+}

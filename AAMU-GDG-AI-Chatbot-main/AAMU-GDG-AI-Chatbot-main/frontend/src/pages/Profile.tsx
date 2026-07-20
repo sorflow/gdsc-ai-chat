@@ -1,492 +1,204 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Save, CheckCircle2, Edit2, X, GraduationCap, Book, Calendar, FileText, AlertCircle } from 'lucide-react';
-import { profileApi, UserProfile } from '../profileApi';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
-import Login from '../components/Login';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AlertCircle, Book, Calendar, CheckCircle2, Edit2, FileText, GraduationCap, Plus, Save, ShieldCheck, X } from 'lucide-react';
+import { profileApi, type UserProfile } from '../profileApi';
+import { validatePdfFile } from '../services/pdfParser';
 
 const Profile = () => {
-  const [profile, setProfile] = useState<UserProfile>({
-    firstName: '',
-    lastName: '',
-    classification: '',
-    coursesTaken: [],
-    major: '',
-  });
-  
+  const reduceMotion = useReducedMotion();
+  const [profile, setProfile] = useState<UserProfile>({ firstName: '', lastName: '', classification: '', coursesTaken: [], major: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [newCourse, setNewCourse] = useState('');
   const [isSaved, setIsSaved] = useState(false);
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [pdfFileName, setPdfFileName] = useState<string>('');
+  const [pdfFileName, setPdfFileName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      if (user) {
-        loadProfile();
+    let cancelled = false;
+    const loadProfile = async () => {
+      try {
+        const savedProfile = await profileApi.getProfile();
+        if (savedProfile && !cancelled) setProfile(savedProfile);
+      } catch {
+        if (!cancelled) setError('Failed to load profile. Please try again later.');
       }
-    });
-
-    return () => unsubscribe();
+    };
+    void loadProfile();
+    return () => { cancelled = true; };
   }, []);
 
-  const loadProfile = async () => {
-    try {
-      const savedProfile = await profileApi.getProfile();
-      if (savedProfile) {
-        setProfile(savedProfile);
-      }
-    } catch (err) {
-      setError('Failed to load profile. Please try again later.');
-      console.error('Error loading profile:', err);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setProfile(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = event.target;
+    setProfile(previous => ({ ...previous, [name]: value }));
   };
 
   const handleAddCourse = () => {
-    if (newCourse.trim() && !profile.coursesTaken.includes(newCourse.trim())) {
-      setProfile(prev => ({
-        ...prev,
-        coursesTaken: [...prev.coursesTaken, newCourse.trim()]
-      }));
+    const course = newCourse.trim();
+    if (course && !profile.coursesTaken.includes(course)) {
+      setProfile(previous => ({ ...previous, coursesTaken: [...previous.coursesTaken, course] }));
       setNewCourse('');
     }
   };
 
   const handleRemoveCourse = (course: string) => {
-    setProfile(prev => ({
-      ...prev,
-      coursesTaken: prev.coursesTaken.filter(c => c !== course)
-    }));
+    setProfile(previous => ({ ...previous, coursesTaken: previous.coursesTaken.filter(item => item !== course) }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     try {
       await profileApi.saveProfile(profile);
       setIsEditing(false);
       setIsSaved(true);
       setError(null);
-      
-      setTimeout(() => {
-        setIsSaved(false);
-      }, 3000);
-    } catch (err) {
+      window.setTimeout(() => setIsSaved(false), 3000);
+    } catch {
       setError('Failed to save profile. Please try again later.');
-      console.error('Error saving profile:', err);
     }
   };
 
-  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
-      try {
-        const fileName = await profileApi.uploadDegreeWorks(file);
-        setPdfFile(file);
-        setPdfFileName(fileName);
-        setProfile(prev => ({
-          ...prev,
-          degreeWorksPdf: fileName
-        }));
-        setError(null);
-      } catch (err) {
-        setError('Failed to upload PDF. Please try again later.');
-        console.error('Error uploading PDF:', err);
-      }
+  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      await validatePdfFile(file);
+      const uploadedFile = await profileApi.uploadDegreeWorks(file);
+      setPdfFileName(uploadedFile.name);
+      setProfile(previous => ({ ...previous, degreeWorksPdfName: uploadedFile.name }));
+      setError(null);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : 'The PDF could not be selected.');
+    } finally {
+      event.target.value = '';
     }
   };
 
-  if (!user) {
-    return <Login onLoginSuccess={() => loadProfile()} />;
-  }
+  const displayName = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || 'Your name';
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Profile Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <div className="flex justify-between items-center">
+    <div className="campus-grid min-h-[calc(100vh-4rem)]">
+      <section className="mx-auto max-w-7xl px-5 pb-16 pt-12 sm:px-8 sm:pt-16">
+        <motion.header
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid gap-7 border-b ink-border pb-9 md:grid-cols-[1fr_auto] md:items-end"
+        >
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-              Profile
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Manage your academic information and preferences
-            </p>
+            <p className="route-kicker">Private student context</p>
+            <h1 className="mt-6 font-display text-[clamp(3.6rem,7vw,6.6rem)] leading-[0.86] tracking-[-0.05em] text-slate-950 dark:text-white">Your academic<br /><span className="italic text-primary-800 dark:text-secondary-300">field notes.</span></h1>
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600 dark:text-slate-300">Keep the details that make advising answers more relevant. This profile stays in your browser.</p>
           </div>
           {!isEditing && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsEditing(true)}
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <Edit2 size={18} className="mr-2" />
-              Edit Profile
-            </motion.button>
+            <button onClick={() => setIsEditing(true)} className="group inline-flex min-h-13 items-center justify-between gap-8 bg-primary-800 py-3 pl-5 pr-3 text-sm font-bold text-white transition hover:-translate-y-1 dark:bg-secondary-300 dark:text-[#111827]">
+              Edit profile<span className="grid h-9 w-9 place-items-center bg-white text-primary-800 dark:bg-[#111827] dark:text-secondary-300"><Edit2 size={16} className="transition-transform group-hover:-rotate-6" /></span>
+            </button>
           )}
-        </div>
-      </motion.div>
+        </motion.header>
 
-      <AnimatePresence mode="wait">
-        {isEditing ? (
-          // Edit Form with enhanced styling
-          <motion.div
-            key="edit-form"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-          >
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                Edit Your Profile
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Update your academic information to get better assistance
-              </p>
-            </div>
+        <AnimatePresence mode="wait">
+          {isEditing ? (
+            <motion.form
+              key="edit"
+              onSubmit={handleSubmit}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mt-8 grid gap-6 lg:grid-cols-[0.92fr_1.08fr]"
+            >
+              <section className="field-panel p-5 sm:p-7" aria-labelledby="personal-heading">
+                <div className="flex items-center justify-between border-b ink-border pb-4">
+                  <div><p className="field-label">Identity</p><h2 id="personal-heading" className="mt-2 font-display text-3xl text-slate-900 dark:text-white">Personal information</h2></div>
+                  <GraduationCap className="text-primary-700 dark:text-secondary-300" size={22} />
+                </div>
+                <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                  <label className="block"><span className="field-label">First name</span><input className="field-input mt-2" id="firstName" name="firstName" value={profile.firstName} onChange={handleInputChange} autoComplete="given-name" /></label>
+                  <label className="block"><span className="field-label">Last name</span><input className="field-input mt-2" id="lastName" name="lastName" value={profile.lastName} onChange={handleInputChange} autoComplete="family-name" /></label>
+                  <label className="block sm:col-span-2"><span className="field-label">Major</span><input className="field-input mt-2" name="major" value={profile.major} onChange={handleInputChange} placeholder="e.g. Computer Science" /></label>
+                  <label className="block"><span className="field-label">Classification</span><select className="field-input mt-2" name="classification" value={profile.classification} onChange={handleInputChange}><option value="">Select classification</option><option>Freshman</option><option>Sophomore</option><option>Junior</option><option>Senior</option></select></label>
+                  <label className="block"><span className="field-label">Expected graduation</span><input className="field-input mt-2" type="month" name="expectedGraduation" value={profile.expectedGraduation || ''} onChange={handleInputChange} /></label>
+                </div>
+              </section>
 
-            <form onSubmit={handleSubmit} className="p-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Personal Information Section */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
-                    <GraduationCap className="mr-2" size={20} />
-                    Personal Information
-                  </h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        First Name
-                      </label>
-                      <input
-                        type="text"
-                        name="firstName"
-                        value={profile.firstName}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        name="lastName"
-                        value={profile.lastName}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                      />
-                    </div>
+              <section className="field-panel p-5 sm:p-7" aria-labelledby="academic-heading">
+                <div className="flex items-center justify-between border-b ink-border pb-4">
+                  <div><p className="field-label">Advising context</p><h2 id="academic-heading" className="mt-2 font-display text-3xl text-slate-900 dark:text-white">Academic information</h2></div>
+                  <Book className="text-primary-700 dark:text-secondary-300" size={22} />
+                </div>
+                <div className="mt-6">
+                  <label htmlFor="course-input" className="field-label">Courses taken</label>
+                  <div className="mt-2 flex gap-2">
+                    <input id="course-input" className="field-input" value={newCourse} onChange={event => setNewCourse(event.target.value)} placeholder="Enter a course code" onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); handleAddCourse(); } }} />
+                    <button type="button" onClick={handleAddCourse} className="grid w-13 shrink-0 place-items-center bg-secondary-300 text-[#111827] transition hover:bg-secondary-400" aria-label="Add course"><Plus size={19} /></button>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Major
-                    </label>
-                    <input
-                      type="text"
-                      name="major"
-                      value={profile.major}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Classification
-                    </label>
-                    <select
-                      name="classification"
-                      value={profile.classification}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                    >
-                      <option value="">Select classification</option>
-                      <option value="Freshman">Freshman</option>
-                      <option value="Sophomore">Sophomore</option>
-                      <option value="Junior">Junior</option>
-                      <option value="Senior">Senior</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Expected Graduation
-                    </label>
-                    <input
-                      type="month"
-                      name="expectedGraduation"
-                      value={profile.expectedGraduation}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                    />
+                  <div className="mt-3 flex min-h-28 flex-wrap content-start gap-2 border ink-border bg-white/45 p-3 dark:bg-[#07101d]/45">
+                    {profile.coursesTaken.length ? profile.coursesTaken.map(course => (
+                      <span key={course} className="inline-flex h-9 items-center gap-2 bg-primary-100 px-3 text-xs font-bold text-primary-900 dark:bg-primary-950 dark:text-primary-100">{course}<button type="button" onClick={() => handleRemoveCourse(course)} className="opacity-55 transition hover:opacity-100" aria-label={`Remove ${course}`}><X size={13} /></button></span>
+                    )) : <span className="text-sm text-slate-400">No courses added yet.</span>}
                   </div>
                 </div>
 
-                {/* Academic Information Section */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
-                    <Book className="mr-2" size={20} />
-                    Academic Information
-                  </h3>
+                <div className="mt-6 border-t ink-border pt-6">
+                  <p className="field-label">DegreeWorks · Optional</p>
+                  <input id="degreeWorks" type="file" accept=".pdf" onChange={handlePdfUpload} className="sr-only" />
+                  <label htmlFor="degreeWorks" className="mt-2 flex min-h-12 cursor-pointer items-center justify-between border ink-border bg-white/65 px-4 text-sm font-semibold transition hover:border-primary-700 dark:bg-[#07101d]/65 dark:hover:border-secondary-300"><span className="flex items-center gap-2"><FileText size={17} /> Choose PDF</span><span className="max-w-[48%] truncate text-xs text-slate-500">{pdfFileName || profile.degreeWorksPdfName || 'No file selected'}</span></label>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Courses Taken
-                    </label>
-                    <div className="space-y-2">
-                      <div className="flex space-x-2">
-                        <input
-                          type="text"
-                          value={newCourse}
-                          onChange={(e) => setNewCourse(e.target.value)}
-                          placeholder="Enter course code"
-                          className="flex-1 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAddCourse}
-                          className="px-4 py-2 bg-secondary-600 text-white rounded-xl hover:bg-secondary-700 transition-colors"
-                        >
-                          Add
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 p-2 min-h-[100px] max-h-[200px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-xl">
-                        {profile.coursesTaken.map((course, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-lg flex items-center group"
-                          >
-                            {course}
-                            <button
-                              onClick={() => handleRemoveCourse(course)}
-                              className="ml-2 text-primary-600 dark:text-primary-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                <div className="mt-6 flex items-start gap-3 border-l-2 border-secondary-300 bg-secondary-50/60 p-4 text-sm leading-6 text-secondary-900 dark:bg-secondary-950/25 dark:text-secondary-200"><ShieldCheck className="mt-0.5 shrink-0" size={18} /><p>These details help tailor guidance and remain local to this browser.</p></div>
+              </section>
+
+              <div className="flex flex-wrap justify-end gap-3 lg:col-span-2">
+                <button type="button" onClick={() => setIsEditing(false)} className="inline-flex min-h-12 items-center gap-2 border ink-border px-5 text-sm font-bold text-slate-700 transition hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/5"><X size={17} /> Cancel</button>
+                <button type="submit" className="inline-flex min-h-12 items-center gap-2 bg-primary-800 px-6 text-sm font-bold text-white transition hover:-translate-y-1 dark:bg-secondary-300 dark:text-[#111827]"><Save size={17} /> Save changes</button>
+              </div>
+            </motion.form>
+          ) : (
+            <motion.div
+              key="view"
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mt-8 grid gap-6 lg:grid-cols-[1.28fr_0.72fr]"
+            >
+              <div className="field-panel overflow-hidden">
+                <div className="grid min-h-[420px] md:grid-cols-[0.42fr_0.58fr]">
+                  <div className="relative flex flex-col justify-between overflow-hidden bg-primary-600 p-6 text-white sm:p-8">
+                    <div className="absolute -right-10 top-16 h-40 w-40 rounded-full border-[32px] border-white/10" aria-hidden="true" />
+                    <div className="relative z-10"><p className="font-utility text-[0.62rem] font-bold uppercase tracking-[0.18em] text-white/70">Student field card</p><div className="mt-10 grid h-24 w-24 place-items-center rounded-full border border-white/30 bg-white/10 font-display text-4xl italic">{profile.firstName?.[0] || 'A'}{profile.lastName?.[0] || 'M'}</div></div>
+                    <div className="relative z-10"><p className="font-display text-4xl leading-none">{displayName}</p><p className="mt-3 font-utility text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/70">{profile.classification || 'Classification open'}</p></div>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      DegreeWorks PDF (Optional)
-                    </label>
-                    <div className="mt-1 flex flex-col space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="file"
-                          accept=".pdf"
-                          onChange={handlePdfUpload}
-                          className="hidden"
-                          id="degreeWorks"
-                        />
-                        <label
-                          htmlFor="degreeWorks"
-                          className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer transition-colors flex items-center"
-                        >
-                          <FileText className="mr-2" size={18} />
-                          Upload DegreeWorks PDF
-                        </label>
-                        {pdfFileName && (
-                          <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-                            <CheckCircle2 className="mr-1" size={16} />
-                            {pdfFileName}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl border border-yellow-200 dark:border-yellow-800">
-                    <div className="flex items-start">
-                      <AlertCircle className="text-yellow-600 dark:text-yellow-500 mt-0.5 mr-2" size={18} />
-                      <p className="text-sm text-yellow-600 dark:text-yellow-500">
-                        Your academic information helps us provide personalized course recommendations and registration guidance.
-                      </p>
-                    </div>
+                  <div className="p-6 sm:p-8">
+                    <div className="flex items-center justify-between border-b ink-border pb-4"><div><p className="field-label">Academic profile</p><h2 className="mt-2 font-display text-3xl text-slate-900 dark:text-white">At a glance</h2></div><GraduationCap size={22} className="text-primary-700 dark:text-secondary-300" /></div>
+                    <dl className="mt-3 divide-y ink-border">
+                      {[
+                        ['Major', profile.major || 'Not specified'],
+                        ['Classification', profile.classification || 'Not specified'],
+                        ['Expected graduation', profile.expectedGraduation ? new Date(`${profile.expectedGraduation}-02`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Not specified'],
+                        ['Courses recorded', String(profile.coursesTaken.length)],
+                      ].map(([label, value]) => <div key={label} className="grid grid-cols-[0.8fr_1.2fr] gap-4 py-4"><dt className="field-label">{label}</dt><dd className="text-sm font-semibold text-slate-800 dark:text-slate-100">{value}</dd></div>)}
+                    </dl>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-8 flex justify-end space-x-4">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="px-6 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors flex items-center"
-                >
-                  <X size={18} className="mr-2" />
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  className="px-6 py-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center"
-                >
-                  <Save size={18} className="mr-2" />
-                  Save Changes
-                </motion.button>
+              <div className="grid gap-6">
+                <section className="field-panel p-5 sm:p-6">
+                  <div className="flex items-center justify-between"><div><p className="field-label">Course record</p><h2 className="mt-2 font-display text-3xl text-slate-900 dark:text-white">Courses taken</h2></div><Book size={21} className="text-primary-700 dark:text-secondary-300" /></div>
+                  <div className="mt-6 flex flex-wrap gap-2">{profile.coursesTaken.length ? profile.coursesTaken.map(course => <span key={course} className="bg-primary-100 px-3 py-2 text-xs font-bold text-primary-900 dark:bg-primary-950 dark:text-primary-100">{course}</span>) : <p className="text-sm text-slate-500 dark:text-slate-400">No courses added yet.</p>}</div>
+                </section>
+                <section className="overflow-hidden border border-black/10 bg-[#111827] p-5 text-white dark:border-white/10 dark:bg-[#efe7db] dark:text-[#111827] sm:p-6">
+                  <div className="flex items-center gap-2"><Calendar size={19} className="text-secondary-300 dark:text-primary-700" /><p className="font-utility text-[0.62rem] font-bold uppercase tracking-[0.18em] text-secondary-300 dark:text-primary-700">Document status</p></div>
+                  <p className="mt-5 font-display text-3xl">{profile.degreeWorksPdfName ? 'Audit attached.' : 'No audit attached.'}</p>
+                  <p className="mt-3 break-all text-sm leading-6 text-slate-300 dark:text-slate-600">{profile.degreeWorksPdfName || 'Edit the profile to add a DegreeWorks PDF.'}</p>
+                </section>
               </div>
-            </form>
-          </motion.div>
-        ) : (
-          // Profile View with enhanced styling
-          <motion.div
-            key="profile-view"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="grid md:grid-cols-3 gap-6"
-          >
-            {/* Main Profile Info */}
-            <div className="md:col-span-2 space-y-6">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="p-6">
-                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center">
-                    <GraduationCap className="mr-2" size={24} />
-                    Academic Profile
-                  </h2>
-                  
-                  <div className="mt-6 grid md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</h3>
-                      <p className="mt-2 text-lg text-gray-900 dark:text-white">
-                        {profile.firstName} {profile.lastName}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Major</h3>
-                      <p className="mt-2 text-lg text-gray-900 dark:text-white">
-                        {profile.major || "Not specified"}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Classification</h3>
-                      <p className="mt-2 text-lg text-gray-900 dark:text-white">
-                        {profile.classification || "Not specified"}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Expected Graduation</h3>
-                      <p className="mt-2 text-lg text-gray-900 dark:text-white">
-                        {profile.expectedGraduation ? new Date(profile.expectedGraduation).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "Not specified"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
 
-              {/* Courses Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="p-6">
-                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center">
-                    <Book className="mr-2" size={24} />
-                    Courses Taken
-                  </h2>
-                  
-                  <div className="mt-6">
-                    {profile.coursesTaken.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {profile.coursesTaken.map((course, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-lg"
-                          >
-                            {course}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 dark:text-gray-400">No courses added yet</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Side Panel */}
-            <div className="space-y-6">
-              {/* Academic Status Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                    <Calendar className="mr-2" size={20} />
-                    Academic Status
-                  </h2>
-                  
-                  <div className="mt-4 space-y-4">
-                    {profile.degreeWorksPdf && (
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">DegreeWorks</h3>
-                        <div className="mt-1 flex items-center text-primary-600 dark:text-primary-400">
-                          <FileText size={16} className="mr-1" />
-                          <span>{profile.degreeWorksPdf}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Error Toast */}
       <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-xl flex items-center"
-          >
-            <AlertCircle size={20} className="mr-2" />
-            <span>{error}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Success Toast */}
-      <AnimatePresence>
-        {isSaved && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-xl flex items-center"
-          >
-            <CheckCircle2 size={20} className="mr-2" />
-            <span>Profile updated successfully!</span>
-          </motion.div>
-        )}
+        {error && <motion.div role="alert" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-4 right-4 z-50 flex max-w-sm items-center gap-3 border border-red-300 bg-red-700 px-5 py-3 text-sm font-semibold text-white shadow-xl"><AlertCircle size={18} />{error}</motion.div>}
+        {isSaved && <motion.div role="status" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-4 right-4 z-50 flex max-w-sm items-center gap-3 border border-emerald-300 bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-xl"><CheckCircle2 size={18} />Profile updated successfully.</motion.div>}
       </AnimatePresence>
     </div>
   );

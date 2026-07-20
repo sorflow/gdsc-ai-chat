@@ -1,84 +1,70 @@
-# AAMU GDG AI Chatbot
+# AAMU Local Grounded Advising Assistant
 
-An intelligent chatbot project developed for the Alabama A&M University (AAMU) Google Developer Group (GDG) on Campus. This project aims to provide an interactive AI-powered chatbot interface to assist students and faculty with various queries.
+A privacy-conscious course-advising demo that searches official Alabama A&M University undergraduate bulletins entirely in the browser. Academic answers are extractive, version-aware, and linked to the source bulletin page; the assistant abstains when the indexed evidence is insufficient.
 
-## 🚀 Features
+## Why this project is different
 
-- Interactive AI-powered chat interface
-- PDF document processing and storage
-- Intelligent response generation
-- Modern, responsive user interface
-- Data collection and analysis capabilities
+- **Traceable:** answers include bulletin year, page number, supporting text, and an official AAMU link.
+- **Local-only:** no API key, backend, authentication, cloud model, or document upload is required.
+- **Measurable:** a curated evaluation and live Reliability page expose accuracy, abstention behavior, corpus coverage, and latency.
+- **Predictable:** unsupported questions produce a clear no-answer response instead of a fabricated answer.
+- **Defensive:** DegreeWorks files are checked for size, MIME type, and PDF signature before local parsing.
 
-## 🛠️ Tech Stack
+## Run locally
 
-- **Frontend:**
-  - Next.js
-  - TypeScript
-  - Tailwind CSS
-  - React
-  - Vite
+Requirements: Node.js 20 or newer and npm.
 
-- **Backend:**
-  - Python
-  - AI/ML Integration
-  - PDF Processing
-
-## 📁 Project Structure
-
-```
-AAMU-GDG-AI-Chatbot/
-├── frontend/           # Next.js frontend application
-├── Pdfstore/          # PDF document storage and processing
-├── Introductions/     # Project documentation and guides
-├── DataCollection/    # Data gathering and analysis tools
+```powershell
+cd AAMU-GDG-AI-Chatbot-main/AAMU-GDG-AI-Chatbot-main/frontend
+npm ci
+npm run dev
 ```
 
-## 🚀 Getting Started
+`npm run dev` first extracts and indexes the 2022–2023, 2023–2024, and 2024–2025 PDFs from `Pdfstore`, then starts Vite. Open the URL printed by Vite.
 
-### Prerequisites
+Useful commands:
 
-- Node.js (v16 or higher)
-- Python 3.x
-- npm or pnpm
+```powershell
+npm run kb:build       # Regenerate the 3-bulletin local index
+npm run kb:evaluate    # Run the 18-question retrieval evaluation
+npm run test:coverage  # Unit and component tests with coverage
+npm run check          # Lint, typecheck, tests, evaluation, and build
+```
 
-### Installation
+## Interview demo flow
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/AAMU-GDG-AI-Chatbot.git
-   cd AAMU-GDG-AI-Chatbot
-   ```
+1. Ask: **“What is the maximum course load in 2024–2025?”**
+2. Open the returned page citation and explain that the answer is extracted from local evidence.
+3. Ask: **“Compare the attendance policy between 2022–2023 and 2024–2025.”**
+4. Ask an unsupported question such as **“What is the quantum submarine maintenance schedule?”** to demonstrate safe abstention.
+5. Open **Reliability** to show corpus provenance, evaluation accuracy, latency, local-only processing, and aggregate session metrics.
 
-2. Install frontend dependencies:
-   ```bash
-   cd frontend
-   npm install
-   # or
-   pnpm install
-   ```
+The current curated evaluation passes 14 of 15 grounded questions (93%), all 3 unsupported questions (100% abstention), and the warm-search P95 target of less than 150 ms. Regenerate `public/data/evaluation-results.json` to refresh measured values on another machine.
 
-3. Start the development server:
-   ```bash
-   npm run dev
-   # or
-   pnpm dev
-   ```
+## Architecture
 
-## 🤝 Contributing
+```text
+Official AAMU PDFs
+        |
+        v
+Build-time page extraction and chunking
+        |
+        v
+Static local JSON index
+        |
+        v
+In-browser BM25-style retrieval
+        |
+        v
+Extractive answer + confidence + page citations
+```
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+The React/Vite frontend remains usable if retrieval fails. Dashboard DegreeWorks parsing and Profile data are separate local-only features. See [Engineering Notes](AAMU-GDG-AI-Chatbot-main/AAMU-GDG-AI-Chatbot-main/docs/ENGINEERING.md) for trust boundaries, failure modes, security decisions, and tradeoffs.
 
-## 📝 License
+## Limitations
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 👥 Team
-
-- AAMU Google Developer Group Members
-
-## 🙏 Acknowledgments
-
-- Google Developer Student Clubs
-- Alabama A&M University
-- All contributors and supporters of the project 
+- Retrieval is lexical and extractive; it does not infer facts absent from the source text.
+- Only three undergraduate bulletins are indexed.
+- Scanned PDFs require OCR and are rejected with a specific message.
+- Official citation links require network access only when the user chooses to open them.
+- DegreeWorks parsing supports common text layouts and intentionally does not transmit or persist uploaded document contents.

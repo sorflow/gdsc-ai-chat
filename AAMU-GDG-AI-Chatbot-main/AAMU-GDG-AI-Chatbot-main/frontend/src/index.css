@@ -1,3 +1,66 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root { color-scheme: light; font-synthesis: none; }
+  :root.dark { color-scheme: dark; }
+  html { scroll-behavior: smooth; }
+  body {
+    @apply m-0 min-w-[320px] bg-[#f4f0e8] font-sans text-[#1c2635] antialiased transition-colors duration-300 dark:bg-[#0b1220] dark:text-[#f7f3ea];
+    text-rendering: optimizeLegibility;
+  }
+  button, a, input, select { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 3px solid #d9a327; outline-offset: 3px; }
+  ::selection { background: #7a1538; color: #fffaf2; }
+}
+
+@layer components {
+  .campus-grid {
+    background-image: linear-gradient(rgba(122, 21, 56, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(122, 21, 56, 0.055) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+  .dark .campus-grid {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  }
+  .paper-shadow { box-shadow: 0 30px 80px -42px rgba(31, 19, 25, 0.5); }
+  .ink-border { border-color: rgba(28, 38, 53, 0.16); }
+  .dark .ink-border { border-color: rgba(247, 243, 234, 0.15); }
+  .field-panel {
+    @apply border border-black/10 bg-[#faf8f2]/90 backdrop-blur-md dark:border-white/10 dark:bg-[#0e1929]/90;
+    box-shadow: 0 28px 72px -48px rgba(17, 24, 39, 0.72);
+  }
+  .field-label {
+    @apply font-utility text-[0.62rem] font-bold uppercase tracking-[0.2em] text-primary-700 dark:text-secondary-300;
+  }
+  .field-input {
+    @apply min-h-12 w-full border border-black/15 bg-white/70 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary-700 focus:ring-2 focus:ring-primary-700/15 dark:border-white/15 dark:bg-[#07101d]/70 dark:text-white dark:focus:border-secondary-300 dark:focus:ring-secondary-300/15;
+  }
+  .route-kicker {
+    @apply flex items-center gap-3 font-utility text-[0.65rem] font-bold uppercase tracking-[0.22em] text-primary-700 dark:text-secondary-300;
+  }
+  .route-kicker::before {
+    content: '';
+    @apply h-px w-9 bg-current;
+  }
+  .noise-layer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+  }
+  .dark .noise-layer::after { mix-blend-mode: screen; opacity: 0.025; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -6,30 +6,14 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          50: '#fff1f4', 100: '#ffe0e7', 200: '#ffc5d2', 300: '#ff9ab0',
+          400: '#f96383', 500: '#e63b62', 600: '#c31f49', 700: '#a3153b',
+          800: '#881536', 900: '#741631', 950: '#430719',
         },
         secondary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-          950: '#082f49',
+          50: '#fff9e8', 100: '#fff0bf', 200: '#ffe286', 300: '#f8ca47',
+          400: '#e8af22', 500: '#d49313', 600: '#b66f0d', 700: '#92500f',
+          800: '#783f13', 900: '#663514', 950: '#3b1b07',
         },
         accent: {
           50: '#f5f3ff',
@@ -44,6 +28,11 @@ export default {
           900: '#4c1d95',
           950: '#2e1065',
         },
+      },
+      fontFamily: {
+        sans: ['Avenir Next', 'Segoe UI', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        display: ['Bodoni 72', 'Didot', 'Georgia', 'Times New Roman', 'serif'],
+        utility: ['Arial Narrow', 'Avenir Next Condensed', 'Segoe UI', 'sans-serif'],
       },
       animation: {
         'typing-dot': 'typing-dot 1.4s infinite ease-in-out',

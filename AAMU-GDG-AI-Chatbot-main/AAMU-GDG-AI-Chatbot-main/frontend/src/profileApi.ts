@@ -1,8 +1,4 @@
-import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { auth } from './firebase';
-import { User } from 'firebase/auth';
-
-const db = getFirestore();
+const PROFILE_STORAGE_KEY = 'aamu-advising-profile';
 
 export interface UserProfile {
   firstName: string;
@@ -10,7 +6,7 @@ export interface UserProfile {
   classification: 'Freshman' | 'Sophomore' | 'Junior' | 'Senior' | '';
   coursesTaken: string[];
   major: string;
-  degreeWorksPdf?: string;
+  degreeWorksPdfName?: string;
   expectedGraduation?: string;
   academicStanding?: string;
   email?: string;
@@ -18,92 +14,36 @@ export interface UserProfile {
 }
 
 export const profileApi = {
-  // Create initial profile from Google sign-in
-  async createProfileFromGoogle(user: User): Promise<void> {
-    if (!user) {
-      throw new Error('User must be authenticated to create profile');
-    }
-
-    const names = user.displayName?.split(' ') || ['', ''];
-    const initialProfile: UserProfile = {
-      firstName: names[0] || '',
-      lastName: names[names.length - 1] || '',
-      classification: '',
-      coursesTaken: [],
-      major: '',
-      email: user.email || '',
-      photoURL: user.photoURL || '',
-    };
-
-    const profileRef = doc(db, 'profiles', user.uid);
-    await setDoc(profileRef, {
-      ...initialProfile,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-  },
-
-  // Create or update a user's profile
   async saveProfile(profile: UserProfile): Promise<void> {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error('User must be authenticated to save profile');
-    }
-
-    const profileRef = doc(db, 'profiles', user.uid);
-    await setDoc(profileRef, {
-      ...profile,
-      updatedAt: new Date().toISOString(),
-    });
+    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
   },
 
-  // Get a user's profile
   async getProfile(): Promise<UserProfile | null> {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error('User must be authenticated to get profile');
+    const savedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
+    if (!savedProfile) return null;
+
+    try {
+      return JSON.parse(savedProfile) as UserProfile;
+    } catch {
+      localStorage.removeItem(PROFILE_STORAGE_KEY);
+      return null;
     }
-
-    const profileRef = doc(db, 'profiles', user.uid);
-    const profileSnap = await getDoc(profileRef);
-
-    if (profileSnap.exists()) {
-      return profileSnap.data() as UserProfile;
-    }
-
-    // If profile doesn't exist but user is authenticated via Google,
-    // create a new profile from Google data
-    if (user.providerData[0]?.providerId === 'google.com') {
-      await this.createProfileFromGoogle(user);
-      return this.getProfile();
-    }
-
-    return null;
   },
 
-  // Update specific fields in a user's profile
   async updateProfile(updates: Partial<UserProfile>): Promise<void> {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error('User must be authenticated to update profile');
+    const currentProfile = await this.getProfile();
+    if (!currentProfile) {
+      throw new Error('Create a profile before updating it.');
     }
 
-    const profileRef = doc(db, 'profiles', user.uid);
-    await updateDoc(profileRef, {
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    });
+    await this.saveProfile({ ...currentProfile, ...updates });
   },
 
-  // Upload DegreeWorks PDF
-  async uploadDegreeWorks(file: File): Promise<string> {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error('User must be authenticated to upload files');
+  async uploadDegreeWorks(file: File): Promise<{ name: string }> {
+    if (file.type !== 'application/pdf') {
+      throw new Error('Please select a PDF file.');
     }
 
-    // TODO: Implement file upload to Firebase Storage
-    // This is a placeholder that returns the file name
-    return file.name;
-  }
-}; 
+    return { name: file.name };
+  },
+};

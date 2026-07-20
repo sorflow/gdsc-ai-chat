@@ -1,293 +1,142 @@
-import React from 'react';
-import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
-import { Sun, Moon, Menu, X, LogOut, User } from 'lucide-react';
+import { useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { ArrowUpRight, Menu, Moon, Sun, X } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
 import ChatButton from './ChatButton';
 import ChatModal from './ChatModal';
-import { useState } from 'react';
+import ReactiveField from './ReactiveField';
 
-const Layout: React.FC = () => {
+const navigation = [
+  { label: 'Home', path: '/' },
+  { label: 'About', path: '/about' },
+  { label: 'Progress', path: '/dashboard' },
+  { label: 'Profile', path: '/profile' },
+  { label: 'Proof', path: '/reliability' },
+];
+
+const Layout = () => {
   const { theme, toggleTheme } = useTheme();
-  const { user, signOut } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-
-  const toggleMenu = () => {
-    setIsMenuOpen(prev => !prev);
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  // Get user's display info
-  const userDisplayName = user?.displayName || user?.email?.split('@')[0] || 'User';
-  const userPhotoUrl = user?.photoURL;
-  const userInitial = userDisplayName[0].toUpperCase();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center">
-                <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
-                  Advising Assistant
-                </span>
-              </Link>
-            </div>
-            
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
-              <Link
-                to="/"
-                className={`text-base font-medium ${
-                  location.pathname === '/'
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'
-                } transition-colors`}
-              >
-                Home
-              </Link>
-              <Link
-                to="/about"
-                className={`text-base font-medium ${
-                  location.pathname === '/about'
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'
-                } transition-colors`}
-              >
-                About
-              </Link>
-              {user && (
-                <>
-                  <Link
-                    to="/dashboard"
-                    className={`text-base font-medium ${
-                      location.pathname === '/dashboard'
-                        ? 'text-primary-600 dark:text-primary-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'
-                    } transition-colors`}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    to="/profile"
-                    className={`text-base font-medium ${
-                      location.pathname === '/profile'
-                        ? 'text-primary-600 dark:text-primary-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'
-                    } transition-colors`}
-                  >
-                    Profile
-                  </Link>
-                </>
-              )}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-              >
-                {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-              </button>
+    <div className="relative flex min-h-screen flex-col overflow-x-hidden">
+      <ReactiveField />
 
-              {user ? (
-                <div className="relative">
-                  <button
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-                  >
-                    {userPhotoUrl ? (
-                      <img 
-                        src={userPhotoUrl} 
-                        alt={userDisplayName}
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                        {userInitial}
-                      </div>
-                    )}
-                  </button>
+      <header className="sticky top-0 z-40 px-3 pt-3 sm:px-5 sm:pt-4">
+        <div className="mx-auto flex max-w-7xl items-stretch justify-between border border-black/10 bg-[#f8f6f0]/88 shadow-[0_14px_44px_-30px_rgba(17,24,39,0.65)] backdrop-blur-xl dark:border-white/10 dark:bg-[#0a1321]/88">
+          <Link
+            to="/"
+            className="group flex min-h-12 items-center gap-3 border-r border-black/10 px-4 dark:border-white/10 sm:min-h-14 sm:px-5"
+            aria-label="AAMU Advising Assistant home"
+          >
+            <span className="grid h-7 w-7 place-items-center bg-primary-800 font-utility text-[0.55rem] font-black uppercase tracking-tight text-white transition-transform group-hover:-rotate-6 dark:bg-secondary-300 dark:text-[#111827]">
+              A&amp;M
+            </span>
+            <span className="hidden text-left sm:block">
+              <span className="block font-utility text-[0.58rem] font-bold uppercase tracking-[0.2em] text-primary-700 dark:text-secondary-300">The Hill</span>
+              <span className="mt-0.5 block text-xs font-semibold text-slate-900 dark:text-white">Advising field</span>
+            </span>
+          </Link>
 
-                  {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1">
-                      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{userDisplayName}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
-                      </div>
-                      <Link
-                        to="/profile"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <User className="w-4 h-4 mr-2" />
-                        Profile
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setIsUserMenuOpen(false);
-                          handleSignOut();
-                        }}
-                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Sign Out
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
+          <nav className="hidden items-stretch md:flex" aria-label="Main navigation">
+            {navigation.map(item => {
+              const active = location.pathname === item.path;
+              return (
                 <Link
-                  to="/login"
-                  className="text-base font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-500"
+                  key={item.path}
+                  to={item.path}
+                  className={`relative flex min-w-[76px] items-center justify-center border-r border-black/10 px-4 font-utility text-[0.62rem] font-bold uppercase tracking-[0.14em] transition-colors dark:border-white/10 ${
+                    active
+                      ? 'bg-[#131820] text-white dark:bg-secondary-300 dark:text-[#101722]'
+                      : 'text-slate-600 hover:bg-primary-500/10 hover:text-primary-800 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-secondary-300'
+                  }`}
+                  aria-current={active ? 'page' : undefined}
                 >
-                  Sign In
+                  {item.label}
+                  {active && <span className="absolute inset-x-4 bottom-0 h-0.5 bg-primary-500 dark:bg-primary-700" />}
                 </Link>
-              )}
-            </nav>
-            
-            {/* Mobile Navigation Toggle */}
-            <div className="md:hidden flex items-center gap-2">
-              {user && (
-                <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center"
-                >
-                  {userPhotoUrl ? (
-                    <img 
-                      src={userPhotoUrl} 
-                      alt={userDisplayName}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                      {userInitial}
-                    </div>
-                  )}
-                </button>
-              )}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-              >
-                {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-              </button>
-              <button
-                onClick={toggleMenu}
-                className="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                aria-label="Toggle menu"
-              >
-                {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
-            </div>
+              );
+            })}
+            <button
+              onClick={toggleTheme}
+              className="grid w-14 place-items-center text-slate-700 transition hover:bg-secondary-300/35 hover:text-primary-800 dark:text-slate-200 dark:hover:bg-primary-800/50 dark:hover:text-secondary-300"
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
+            </button>
+          </nav>
+
+          <div className="flex md:hidden">
+            <button
+              onClick={toggleTheme}
+              className="grid w-12 place-items-center border-r border-black/10 text-slate-700 dark:border-white/10 dark:text-slate-200"
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
+            </button>
+            <button
+              onClick={() => setIsMenuOpen(open => !open)}
+              className="grid w-12 place-items-center bg-[#131820] text-white dark:bg-secondary-300 dark:text-[#111827]"
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMenuOpen}
+            >
+              {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
           </div>
         </div>
-        
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-white dark:bg-gray-800 shadow-md">
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              {user && (
-                <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 mb-2">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{userDisplayName}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
-                </div>
-              )}
-              <Link
-                to="/"
-                className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  location.pathname === '/'
-                    ? 'bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/50 hover:text-primary-600 dark:hover:text-primary-400'
-                } transition-colors`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                to="/about"
-                className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  location.pathname === '/about'
-                    ? 'bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/50 hover:text-primary-600 dark:hover:text-primary-400'
-                } transition-colors`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                About
-              </Link>
-              {user ? (
-                <>
+
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.nav
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+              className="mx-auto mt-1 max-w-7xl border border-black/10 bg-[#f8f6f0] p-2 shadow-xl dark:border-white/10 dark:bg-[#0a1321] md:hidden"
+              aria-label="Mobile navigation"
+            >
+              {navigation.map(item => {
+                const active = location.pathname === item.path;
+                return (
                   <Link
-                    to="/dashboard"
-                    className={`block px-3 py-2 rounded-md text-base font-medium ${
-                      location.pathname === '/dashboard'
-                        ? 'bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/50 hover:text-primary-600 dark:hover:text-primary-400'
-                    } transition-colors`}
+                    key={item.path}
+                    to={item.path}
                     onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center justify-between border-b px-4 py-3 text-sm font-semibold last:border-0 ${active ? 'border-primary-700 bg-primary-800 text-white' : 'ink-border text-slate-700 dark:text-slate-200'}`}
                   >
-                    Dashboard
+                    {item.label}<span className="font-utility text-[0.6rem] uppercase tracking-[0.16em]">Open</span>
                   </Link>
-                  <Link
-                    to="/profile"
-                    className={`block px-3 py-2 rounded-md text-base font-medium ${
-                      location.pathname === '/profile'
-                        ? 'bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/50 hover:text-primary-600 dark:hover:text-primary-400'
-                    } transition-colors`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      handleSignOut();
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/50 hover:text-primary-600 dark:hover:text-primary-400"
-                  >
-                    Sign Out
-                  </button>
-                </>
-              ) : (
-                <Link
-                  to="/login"
-                  className={`block px-3 py-2 rounded-md text-base font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/50`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Sign In
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
+                );
+              })}
+            </motion.nav>
+          )}
+        </AnimatePresence>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Outlet />
-      </main>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.main
+          key={location.pathname}
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -12 }}
+          transition={{ duration: reduceMotion ? 0.15 : 0.48, ease: [0.22, 1, 0.36, 1] }}
+          className="relative z-10 flex-1"
+        >
+          <Outlet />
+        </motion.main>
+      </AnimatePresence>
 
-      <footer className="bg-white dark:bg-gray-800 shadow-inner mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-            <p>© 2025 GDG - AAMU.</p>
-            <p className="mt-2">
-              <Link to="/about" className="text-primary-600 dark:text-primary-400 hover:underline">
-                Learn more about the Google Developers Group AAMU Team
-              </Link>
-            </p>
+      <footer className="relative z-10 border-t border-black/10 bg-[#ece6dc]/95 dark:border-white/10 dark:bg-[#07101d]/95">
+        <div className="mx-auto grid max-w-7xl gap-6 px-5 py-8 sm:grid-cols-[1fr_auto] sm:items-end sm:px-8">
+          <div>
+            <p className="font-display text-2xl italic text-slate-900 dark:text-white">Evidence for your next move.</p>
+            <p className="mt-2 font-utility text-[0.62rem] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">© {new Date().getFullYear()} GDG on Campus · Alabama A&amp;M University</p>
           </div>
+          <Link to="/about" className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary-700 dark:text-secondary-300">
+            Meet the builders <ArrowUpRight size={15} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </Link>
         </div>
       </footer>
 
